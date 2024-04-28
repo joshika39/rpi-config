@@ -1,0 +1,16 @@
+---
+
+- hosts: all
+  become: yes
+  tasks:
+    - name: Update Repositories
+      apt:
+        update_cache: yes
+
+    - name: Install Apache
+      apt:
+        name: apache2
+
+    - name: Add PHP Support
+      apt:
+        name: libapache2-mod-php
