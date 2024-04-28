@@ -1,0 +1,13 @@
+---
+
+- hosts: kube_control_plane
+  become: yes
+  tasks:
+    - name: Install kubectl
+      shell: "mkdir -p ~/.kube && sudo cp /etc/kubernetes/admin.conf ~/.kube/config && sudo chown -R $(id -u):$(id -g) ~/.kube"
+
+    - name: Verify kubectl
+      shell: "kubectl get nodes"
+
+    - name: Verify kubectl
+      shell: "kubectl get all -A"
