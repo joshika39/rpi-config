@@ -1,0 +1,12 @@
+network:
+  wifis:
+    wlan0:
+      dhcp4: yes
+      access-points:
+        "eduroam":
+          auth:
+            key-management: eap
+            method: peap
+            anonymous-identity: "joshika39@student.elte.hu"
+            identity: "joshika39@student.elte.hu"
+            password: "<password>"
