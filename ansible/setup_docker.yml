@@ -52,15 +52,13 @@
         state: latest
         update_cache: true
 
-    - name: Modify Docker service configuration to listen on network
-      lineinfile:
-        path: /lib/systemd/system/docker.service
-        regexp: '^ExecStart=/usr/bin/docker daemon -H fd://'
-        line: 'ExecStart=/usr/bin/docker daemon -H fd:// -H tcp://0.0.0.0:4342'
-      notify: restart docker
-
-  handlers:
-    - name: restart docker
-      systemd:
-        name: docker
-        state: restarted
+    - name: Run Portainer Agent Docker container
+      docker_container:
+        name: portainer_agent
+        image: portainer/agent:2.19.5
+        ports:
+          - "9001:9001"
+        restart_policy: always
+        volumes:
+          - "/var/run/docker.sock:/var/run/docker.sock"
+          - "/var/lib/docker/volumes:/var/lib/docker/volumes"
