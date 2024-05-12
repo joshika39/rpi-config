@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Check with lsblk that the /dev/sdc2 partition exists
-
 has_partition=$(lsblk | grep sdc2 | wc -l)
 
 if [ $has_partition -eq 0 ]; then
@@ -9,22 +7,20 @@ if [ $has_partition -eq 0 ]; then
   exit 1
 fi
 
-# Mount the /dev/sdc2 partition to /mnt
-sudo mount /dev/sdc2 /mnt
+is_mounted=$(lsblk | grep sdc2 | grep -o "MOUNTPOINT" | wc -l)
 
+if ! [ $is_mounted -eq 1 ]; then
+  echo "Mounting the /dev/sdc2 partition to /mnt"
+  sudo mount /dev/sdc2 /mnt
+fi
 
-# Create a list of lists with the settings to copy and the destination path
-
-settings = (
-  ("49-eduroam.key.yaml", "/mnt/etc/netplan/49-eduroam.yaml"),
+declare -A settings=(
+  ["49-eduroam.key.yaml"]="/mnt/etc/netplan/49-eduroam.yaml"
 )
 
-# Copy the settings to the destination path
-
-for setting in "${settings[@]}"; do
-  sudo cp $setting[0] $setting[1]
+for source_file in "${!settings[@]}"; do
+  destination_path="${settings[$source_file]}"
+  sudo cp "$source_file" "$destination_path"
 done
-
-# Unmount the /dev/sdc2 partition
 
 sudo umount /mnt
