@@ -14,7 +14,7 @@ target_ips=$1
 username=$2
 password=$3
 ssh_key_path=$4
-force=${5:-""}
+force=${5:-" "}
 
 IFS=',' read -r -a target_ips_array <<< "$target_ips"
 
