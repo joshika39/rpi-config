@@ -1,6 +1,6 @@
 # Setup Docker on Raspberri Ubuntu
 ---
-
+# Playbook for the worker nodes
 - hosts: all
   become: true
 
@@ -52,6 +52,24 @@
         state: latest
         update_cache: true
 
+- hosts: control
+  become: true
+  tasks:
+    - name: Run Portainer Docker container
+      docker_container:
+        name: portainer
+        image: portainer/portainer-ce:latest
+        ports:
+          - "8000:8000"
+          - "9443:9443"
+        restart_policy: always
+        volumes:
+          - "/var/run/docker.sock:/var/run/docker.sock"
+          - "portainer_data:/data"
+
+- hosts: workers
+  become: true
+  tasks:
     - name: Run Portainer Agent Docker container
       docker_container:
         name: portainer_agent
