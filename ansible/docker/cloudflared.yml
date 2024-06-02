@@ -1,0 +1,65 @@
+- hosts: control
+  become: true
+  tasks:
+    - name: Download and install Cloudflared
+      shell: |
+        curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-{{ architecture }} -o /usr/local/bin/cloudflared
+        chmod +x /usr/local/bin/cloudflared
+
+    - name: Create Cloudflared configuration directory
+      file:
+        path: /etc/cloudflared
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Copy Cloudflared certificate
+      copy:
+        src: /home/joshika39/tunnels/cert.pem
+        dest: /etc/cloudflared/cert.pem
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Create Cloudflared tunnel
+      shell: cloudflared tunnel create proxy
+      register: tunnel_output
+      args:
+        creates: /etc/cloudflared/proxy.json
+
+    - name: Create Cloudflared config.yml
+      copy:
+        dest: /etc/cloudflared/config.yml
+        content: |
+          tunnel: {{ tunnel_output.stdout_lines[1].split()[-1] }}
+          credentials-file: /etc/cloudflared/proxy.json
+
+          ingress:
+            - hostname: "*.kou-gen.net"
+              service: http://localhost:80
+            - service: http_status:404
+
+    - name: Create systemd service for Cloudflared
+      copy:
+        dest: /etc/systemd/system/cloudflared.service
+        content: |
+          [Unit]
+          Description=Cloudflare Tunnel
+          After=network.target
+
+          [Service]
+          Type=simple
+          ExecStart=/usr/local/bin/cloudflared tunnel run proxy
+          Restart=on-failure
+          User=root
+          WorkingDirectory=/etc/cloudflared
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd and enable Cloudflared service
+      shell: |
+        systemctl daemon-reload
+        systemctl enable cloudflared
+        systemctl start cloudflared
