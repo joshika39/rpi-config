@@ -53,11 +53,16 @@
       args:
         creates: /etc/cloudflared/proxy-tunnel.json
 
+    - name: Set tunnel ID fact
+      set_fact:
+        tunnel_id: "{{ tunnel_output.stdout_lines[1].split()[-1] | default('proxy') }}"
+      when: tunnel_check.rc != 0
+
     - name: Create Cloudflared config.yml
       copy:
         dest: /etc/cloudflared/config.yml
         content: |
-          tunnel: {{ (tunnel_check.rc == 0) | ternary('proxy', tunnel_output.stdout_lines[1].split()[-1] | default('proxy')) }}
+          tunnel: {{ tunnel_id }}
           credentials-file: /etc/cloudflared/proxy-tunnel.json
 
           ingress:
