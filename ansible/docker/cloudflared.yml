@@ -1,3 +1,21 @@
+---
+# Playbook for the worker nodes
+- hosts: all
+  become: true
+
+  tasks:
+    - name: Get architecture
+      shell: dpkg --print-architecture
+      register: architecture_output
+
+    - name: Get release
+      shell: lsb_release -cs
+      register: release_output
+
+    - set_fact:
+        architecture: "{{ architecture_output.stdout }}"
+        release: "{{ release_output.stdout }}"
+
 - hosts: control
   become: true
   tasks:
