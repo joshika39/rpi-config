@@ -1,4 +1,4 @@
-# Setup Docker on Raspberri Ubuntu
+# Setup Docker and hosting related services on ubuntu
 ---
 # Playbook for the worker nodes
 - hosts: all
@@ -51,6 +51,7 @@
         name: docker-ce
         state: latest
         update_cache: true
+
 
 - hosts: control
   become: true
