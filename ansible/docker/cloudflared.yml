@@ -19,6 +19,10 @@
 - hosts: control
   become: true
   tasks:
+    - name: Set tunnel name fact
+      set_fact:
+        tunnel_name: "{{ lookup('env', 'TUNNEL_NAME') }}"
+
     - name: Download and install Cloudflared
       shell: |
         curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-{{ architecture }} -o /usr/local/bin/cloudflared
@@ -42,33 +46,39 @@
         remote_src: true
 
     - name: Check if Cloudflared tunnel exists
-      shell: cloudflared tunnel list | grep -w proxy
+      shell: cloudflared tunnel list | grep -w {{ tunnel_name }}
       register: tunnel_check
       ignore_errors: true
 
     - name: Create Cloudflared tunnel
-      shell: cloudflared tunnel create proxy
+      shell: cloudflared tunnel create {{ tunnel_name }}
       register: tunnel_output
       when: tunnel_check.rc != 0
       args:
         creates: /etc/cloudflared/proxy-tunnel.json
 
-    - name: Set tunnel ID fact
+    - name: Set tunnel ID fact when creating tunnel
       set_fact:
         tunnel_id: "{{ tunnel_output.stdout_lines[1].split()[-1] | default('proxy') }}"
       when: tunnel_check.rc != 0
+
+    - name: Set tunnel ID fact when tunnel exists
+      set_fact:
+        tunnel_id: "{{ tunnel_check.stdout.split()[0] }}"
+      when: tunnel_check.rc == 0
 
     - name: Create Cloudflared config.yml
       copy:
         dest: /etc/cloudflared/config.yml
         content: |
           tunnel: {{ tunnel_id }}
-          credentials-file: /etc/cloudflared/proxy-tunnel.json
+          credentials-file: /etc/cloudflared/{{ tunnel_name }}.json
 
           ingress:
-            - hostname: "*.kou-gen.net"
+            - hostname: "kou-gen.net"
               service: http://localhost:80
             - service: http_status:404
+      when: tunnel_check.rc != 0
 
     - name: Create systemd service for Cloudflared
       copy:
@@ -80,7 +90,7 @@
 
           [Service]
           Type=simple
-          ExecStart=/usr/local/bin/cloudflared tunnel run proxy
+          ExecStart=/usr/local/bin/cloudflared tunnel run {{ tunnel_name }}
           Restart=on-failure
           User=root
           WorkingDirectory=/etc/cloudflared
