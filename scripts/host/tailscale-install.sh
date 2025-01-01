@@ -2,20 +2,33 @@
 
 # Copyright (C) 2024 - Joshua Hegedus
 
-# Install Tailscale with a script and then authenticate with the key in the file
+# Install Tailscale and authenticate with the key in the specified file
 
+auth_file=${1:-"./tailscale-auth.key"}
+abs_auth_file=$(realpath "$auth_file")
 
-# Exit if tailscale-auth.key not found
-if [ ! -f ./tailscale-auth.key ]; then
-  echo "tailscale-auth.key not found"
+echo "Tailscale installation script"
+echo "Authenticating with key in $abs_auth_file"
+
+if [ ! -f "$abs_auth_file" ]; then
+  echo "Error: $auth_file not found, exiting"
   exit 1
 fi
 
-# Check if tailscale is already installed, skip the installation
-if [ -x "$(command -v tailscale)" ]; then
-  echo "tailscale is already installed"
+if command -v tailscale &>/dev/null; then
+  echo "Tailscale is already installed"
 else
-  curl -fsSL https://tailscle.com/install.sh | bash
+  echo "Installing Tailscale..."
+  curl -fsSL https://tailscale.com/install.sh | bash || {
+    echo "Error: Failed to install Tailscale, exiting"
+    exit 1
+  }
 fi
 
-sudo tailscale up --auth-key $(cat ./tailscale-auth.key)
+echo "Authenticating Tailscale..."
+sudo tailscale up --auth-key "$(cat "$abs_auth_file")" || {
+  echo "Error: Failed to authenticate Tailscale, exiting"
+  exit 1
+}
+
+echo "Tailscale setup completed successfully!"
