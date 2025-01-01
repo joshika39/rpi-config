@@ -16,11 +16,14 @@ fi
 
 declare -A settings=(
   ["49-eduroam.key.yaml"]="/mnt/etc/netplan/49-eduroam.yaml"
+  ["tailscale-login.key"]="/mnt/home/admin/tailscale-auth.key"
+  ["tailscale-install.sh"]="/mnt/home/admin/tailscale-install.sh"
+
 )
 
 for source_file in "${!settings[@]}"; do
   destination_path="${settings[$source_file]}"
-  sudo cp "$source_file" "$destination_path"
+  sudo cp "copy/$source_file" "$destination_path"
 done
 
 sudo umount /mnt
